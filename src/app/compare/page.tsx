@@ -1,15 +1,13 @@
 "use client";
-// src/app/compare/page.tsx
-// Side-by-side college comparison with up to 3 colleges
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { College } from "@/types";
+import type { College } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import EmptyState from "@/components/ui/EmptyState";
 
-export default function ComparePage() {
+function CompareContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const idsParam = searchParams.get("ids") || "";
@@ -20,7 +18,6 @@ export default function ComparePage() {
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<College[]>([]);
-  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     if (ids.length >= 2) {
@@ -39,14 +36,11 @@ export default function ComparePage() {
   async function handleSearch(q: string) {
     setSearchQuery(q);
     if (q.length < 2) { setSearchResults([]); return; }
-    setSearching(true);
     try {
       const res = await fetch(`/api/colleges?search=${encodeURIComponent(q)}&limit=5`);
       const data = await res.json();
       setSearchResults(data.data?.filter((c: College) => !ids.includes(c.id)) || []);
-    } finally {
-      setSearching(false);
-    }
+    } catch {}
   }
 
   function addCollege(college: College) {
@@ -86,6 +80,7 @@ export default function ComparePage() {
     { label: "Highest Package", values: [placements0, placements1, placements2].map((p) => p ? formatCurrency(p.highestSalary) : "—"), highlight: null },
     { label: "Accreditation", values: colleges.map((c) => c.accreditation || "N/A"), highlight: null },
   ] : [];
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       <div className="mb-6">
@@ -93,7 +88,6 @@ export default function ComparePage() {
         <p className="text-slate-500 mt-1">Compare up to 3 colleges side by side</p>
       </div>
 
-      {/* Add college search */}
       {ids.length < 3 && (
         <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6 relative">
           <p className="text-sm font-medium text-slate-700 mb-3">
@@ -109,11 +103,7 @@ export default function ComparePage() {
           {searchResults.length > 0 && (
             <div className="absolute z-10 mt-1 w-full max-w-md bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
               {searchResults.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => addCollege(c)}
-                  className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
-                >
+                <button key={c.id} onClick={() => addCollege(c)} className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
                   <div className="text-sm font-semibold text-slate-800">{c.name}</div>
                   <div className="text-xs text-slate-500">{c.location} · ⭐ {c.rating}</div>
                 </button>
@@ -123,83 +113,49 @@ export default function ComparePage() {
         </div>
       )}
 
-      {loading && (
-        <div className="text-center py-20 text-slate-400">Loading comparison...</div>
-      )}
+      {loading && <div className="text-center py-20 text-slate-400">Loading comparison...</div>}
 
       {!loading && ids.length < 2 && (
-        <EmptyState
-          icon="⚖️"
-          title="Select colleges to compare"
-          description="Search and add at least 2 colleges to start comparing"
-          action={{ label: "Browse Colleges", href: "/colleges" }}
-        />
+        <EmptyState icon="⚖️" title="Select colleges to compare" description="Search and add at least 2 colleges to start comparing" action={{ label: "Browse Colleges", href: "/colleges" }} />
       )}
 
       {!loading && colleges.length >= 2 && (
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-          {/* College headers */}
           <div className="grid border-b border-slate-200" style={{ gridTemplateColumns: `200px repeat(${colleges.length}, 1fr)` }}>
             <div className="p-4 bg-slate-50 border-r border-slate-200" />
             {colleges.map((college) => (
               <div key={college.id} className="p-4 border-r border-slate-200 last:border-0">
                 <div className="relative h-28 rounded-xl overflow-hidden bg-slate-100 mb-3">
-                  {college.image && (
-                    <img src={college.image} alt={college.name} className="w-full h-full object-cover" />
-                  )}
-                  <button
-                    onClick={() => removeCollege(college.id)}
-                    className="absolute top-2 right-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 text-xs shadow"
-                  >
-                    ✕
-                  </button>
+                  {college.image && <img src={college.image} alt={college.name} className="w-full h-full object-cover" />}
+                  <button onClick={() => removeCollege(college.id)} className="absolute top-2 right-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 text-xs shadow">✕</button>
                 </div>
-                <Link href={`/colleges/${college.id}`} className="font-bold text-slate-800 hover:text-indigo-600 text-sm leading-tight block">
-                  {college.name}
-                </Link>
+                <Link href={`/colleges/${college.id}`} className="font-bold text-slate-800 hover:text-indigo-600 text-sm leading-tight block">{college.name}</Link>
                 <p className="text-xs text-slate-500 mt-0.5">{college.city}</p>
               </div>
             ))}
           </div>
 
-          {/* Comparison rows */}
           {compareRows.map((row, i) => {
             const highlights = row.highlight ? row.highlight() : row.values.map(() => "");
             return (
-              <div
-                key={row.label}
-                className={`grid border-b border-slate-100 last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
-                style={{ gridTemplateColumns: `200px repeat(${colleges.length}, 1fr)` }}
-              >
-                <div className="px-5 py-3.5 text-sm font-semibold text-slate-600 border-r border-slate-200 flex items-center">
-                  {row.label}
-                </div>
+              <div key={row.label} className={`grid border-b border-slate-100 last:border-0 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`} style={{ gridTemplateColumns: `200px repeat(${colleges.length}, 1fr)` }}>
+                <div className="px-5 py-3.5 text-sm font-semibold text-slate-600 border-r border-slate-200 flex items-center">{row.label}</div>
                 {row.values.slice(0, colleges.length).map((val, j) => (
-                  <div key={j} className={`px-5 py-3.5 text-sm border-r border-slate-100 last:border-0 ${highlights[j] || "text-slate-700"}`}>
-                    {val}
-                  </div>
+                  <div key={j} className={`px-5 py-3.5 text-sm border-r border-slate-100 last:border-0 ${highlights[j] || "text-slate-700"}`}>{val}</div>
                 ))}
               </div>
             );
           })}
 
-          {/* Top recruiters */}
-          <div
-            className="grid border-t border-slate-200"
-            style={{ gridTemplateColumns: `200px repeat(${colleges.length}, 1fr)` }}
-          >
-            <div className="px-5 py-4 text-sm font-semibold text-slate-600 border-r border-slate-200">
-              Top Recruiters
-            </div>
+          <div className="grid border-t border-slate-200" style={{ gridTemplateColumns: `200px repeat(${colleges.length}, 1fr)` }}>
+            <div className="px-5 py-4 text-sm font-semibold text-slate-600 border-r border-slate-200">Top Recruiters</div>
             {colleges.map((college) => {
               const p = college.placements as any;
               return (
                 <div key={college.id} className="px-5 py-4 border-r border-slate-100 last:border-0">
                   <div className="flex flex-wrap gap-1">
                     {p?.topRecruiters?.slice(0, 3).map((r: string) => (
-                      <span key={r} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                        {r}
-                      </span>
+                      <span key={r} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{r}</span>
                     ))}
                   </div>
                 </div>
@@ -209,5 +165,13 @@ export default function ComparePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-8 text-slate-400">Loading...</div>}>
+      <CompareContent />
+    </Suspense>
   );
 }
