@@ -2,7 +2,7 @@
 // src/components/college/CollegeFilters.tsx
 // Sidebar with search, location, fee range, rating, and type filters
 
-import { CollegeFilters } from "@/types";
+import type { CollegeFilters } from "@/types";
 
 interface FiltersProps {
   filters: CollegeFilters;
