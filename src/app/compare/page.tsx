@@ -67,26 +67,25 @@ export default function ComparePage() {
   const placements2 = colleges[2]?.placements as any;
 
   const compareRows = colleges.length >= 2 ? [
-    { label: "Location", values: colleges.map((c) => c.location) },
-    { label: "Type", values: colleges.map((c) => c.type) },
-    { label: "Established", values: colleges.map((c) => c.established ? String(c.established) : "N/A") },
-    { label: "Annual Fees", values: colleges.map((c) => formatCurrency(c.fees)), highlight: (vals: string[]) => {
+    { label: "Location", values: colleges.map((c) => c.location), highlight: null },
+    { label: "Type", values: colleges.map((c) => c.type), highlight: null },
+    { label: "Established", values: colleges.map((c) => c.established ? String(c.established) : "N/A"), highlight: null },
+    { label: "Annual Fees", values: colleges.map((c) => formatCurrency(c.fees)), highlight: () => {
       const nums = colleges.map((c) => c.fees);
       return nums.map((n) => n === Math.min(...nums) ? "text-emerald-600 font-bold" : "");
     }},
-    { label: "Rating", values: colleges.map((c) => `⭐ ${c.rating}`), highlight: (vals: string[]) => {
+    { label: "Rating", values: colleges.map((c) => `⭐ ${c.rating}`), highlight: () => {
       return colleges.map((c) => c.rating === Math.max(...colleges.map((x) => x.rating)) ? "text-amber-600 font-bold" : "");
     }},
-    { label: "Courses", values: colleges.map((c) => `${(c as any).courses?.length || "—"} courses`) },
+    { label: "Courses", values: colleges.map((c) => `${(c as any).courses?.length || "—"} courses`), highlight: null },
     { label: "Placement Rate", values: [placements0, placements1, placements2].map((p) => p ? `${p.placementRate}%` : "—"), highlight: () => {
       const rates = [placements0, placements1, placements2].map((p) => p?.placementRate || 0);
       return rates.map((r) => r === Math.max(...rates) ? "text-emerald-600 font-bold" : "");
     }},
-    { label: "Avg Package", values: [placements0, placements1, placements2].map((p) => p ? formatCurrency(p.averageSalary) : "—") },
-    { label: "Highest Package", values: [placements0, placements1, placements2].map((p) => p ? formatCurrency(p.highestSalary) : "—") },
-    { label: "Accreditation", values: colleges.map((c) => c.accreditation || "N/A") },
+    { label: "Avg Package", values: [placements0, placements1, placements2].map((p) => p ? formatCurrency(p.averageSalary) : "—"), highlight: null },
+    { label: "Highest Package", values: [placements0, placements1, placements2].map((p) => p ? formatCurrency(p.highestSalary) : "—"), highlight: null },
+    { label: "Accreditation", values: colleges.map((c) => c.accreditation || "N/A"), highlight: null },
   ] : [];
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       <div className="mb-6">
@@ -165,7 +164,7 @@ export default function ComparePage() {
 
           {/* Comparison rows */}
           {compareRows.map((row, i) => {
-            const highlights = row.highlight ? row.highlight(row.values) : row.values.map(() => "");
+            const highlights = row.highlight ? row.highlight() : row.values.map(() => "");
             return (
               <div
                 key={row.label}
