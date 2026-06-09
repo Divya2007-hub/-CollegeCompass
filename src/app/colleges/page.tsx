@@ -1,14 +1,12 @@
 "use client";
-// src/app/colleges/page.tsx
-// Main college discovery page with card/table view, filters, search, pagination
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import CollegeCard from "@/components/college/CollegeCard";
 import CollegeFilters from "@/components/college/CollegeFilters";
 import { CollegeCardSkeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import Pagination from "@/components/ui/Pagination";
 import EmptyState from "@/components/ui/EmptyState";
-import { College, CollegeFilters as FilterType } from "@/types";
+import type { College, CollegeFilters as FilterType } from "@/types";
 import { buildQueryString, formatCurrency, getRatingColor, getCollegeTypeColor } from "@/lib/utils";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -25,7 +23,7 @@ const DEFAULT_FILTERS: FilterType = {
   sortOrder: "desc",
 };
 
-export default function CollegesPage() {
+function CollegesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -94,7 +92,6 @@ export default function CollegesPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      {/* Page header */}
       <div className="mb-6">
         <h1 className="text-3xl font-black text-slate-800">Explore Colleges</h1>
         <p className="text-slate-500 mt-1">
@@ -103,59 +100,38 @@ export default function CollegesPage() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar filters */}
         <aside className="w-full lg:w-72 shrink-0">
-          <CollegeFilters
-            filters={filters}
-            onChange={handleFilterChange}
-            onReset={handleReset}
-          />
+          <CollegeFilters filters={filters} onChange={handleFilterChange} onReset={handleReset} />
         </aside>
 
-        {/* Main content */}
         <div className="flex-1 min-w-0">
-          {/* Toolbar */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2 text-sm text-slate-600">
               <span>View:</span>
-              <button
-                onClick={() => setView("card")}
-                className={`p-1.5 rounded ${view === "card" ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-100"}`}
-                title="Card view"
-              >
+              <button onClick={() => setView("card")} className={`p-1.5 rounded ${view === "card" ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-100"}`}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
               </button>
-              <button
-                onClick={() => setView("table")}
-                className={`p-1.5 rounded ${view === "table" ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-100"}`}
-                title="Table view"
-              >
+              <button onClick={() => setView("table")} className={`p-1.5 rounded ${view === "table" ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-100"}`}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 6v12M14 6v12M3 6h18" />
                 </svg>
               </button>
             </div>
-
             {compareList.length > 0 && (
-              <Link
-                href={`/compare?ids=${compareList.map((c) => c.id).join(",")}`}
-                className="flex items-center gap-2 bg-amber-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-amber-600 transition-colors"
-              >
+              <Link href={`/compare?ids=${compareList.map((c) => c.id).join(",")}`} className="flex items-center gap-2 bg-amber-500 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-amber-600 transition-colors">
                 Compare ({compareList.length}) →
               </Link>
             )}
           </div>
 
-          {/* Error state */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-4 text-sm">
               {error} <button onClick={() => fetchColleges(filters)} className="underline ml-1">Retry</button>
             </div>
           )}
 
-          {/* Card view */}
           {view === "card" && (
             <>
               {loading ? (
@@ -163,28 +139,17 @@ export default function CollegesPage() {
                   {Array.from({ length: 6 }).map((_, i) => <CollegeCardSkeleton key={i} />)}
                 </div>
               ) : colleges.length === 0 ? (
-                <EmptyState
-                  icon="🏫"
-                  title="No colleges found"
-                  description="Try adjusting your filters or search terms"
-                  action={{ label: "Reset Filters", onClick: handleReset }}
-                />
+                <EmptyState icon="🏫" title="No colleges found" description="Try adjusting your filters or search terms" action={{ label: "Reset Filters", onClick: handleReset }} />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                   {colleges.map((college) => (
-                    <CollegeCard
-                      key={college.id}
-                      college={college}
-                      onCompareToggle={toggleCompare}
-                      isInCompare={compareList.some((c) => c.id === college.id)}
-                    />
+                    <CollegeCard key={college.id} college={college} onCompareToggle={toggleCompare} isInCompare={compareList.some((c) => c.id === college.id)} />
                   ))}
                 </div>
               )}
             </>
           )}
 
-          {/* Table view */}
           {view === "table" && (
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
               <div className="overflow-x-auto">
@@ -204,9 +169,7 @@ export default function CollegesPage() {
                     {loading ? (
                       Array.from({ length: 6 }).map((_, i) => <TableRowSkeleton key={i} />)
                     ) : colleges.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="text-center py-12 text-slate-400">No colleges found</td>
-                      </tr>
+                      <tr><td colSpan={7} className="text-center py-12 text-slate-400">No colleges found</td></tr>
                     ) : (
                       colleges.map((c) => {
                         const p = c.placements as any;
@@ -217,29 +180,19 @@ export default function CollegesPage() {
                             </td>
                             <td className="px-4 py-3 text-slate-600">{c.city}</td>
                             <td className="px-4 py-3">
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getCollegeTypeColor(c.type)}`}>
-                                {c.type}
-                              </span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getCollegeTypeColor(c.type)}`}>{c.type}</span>
                             </td>
                             <td className="px-4 py-3 text-slate-700">{formatCurrency(c.fees)}</td>
                             <td className="px-4 py-3">
-                              <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${getRatingColor(c.rating)}`}>
-                                ⭐ {c.rating}
-                              </span>
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${getRatingColor(c.rating)}`}>⭐ {c.rating}</span>
                             </td>
                             <td className="px-4 py-3 text-emerald-600 font-medium">{p?.placementRate}%</td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
-                                <Link href={`/colleges/${c.id}`} className="text-xs text-indigo-600 font-medium hover:underline">
-                                  Details
-                                </Link>
+                                <Link href={`/colleges/${c.id}`} className="text-xs text-indigo-600 font-medium hover:underline">Details</Link>
                                 <button
                                   onClick={() => toggleCompare(c)}
-                                  className={`text-xs px-2 py-0.5 rounded border font-medium transition-colors ${
-                                    compareList.some((x) => x.id === c.id)
-                                      ? "bg-amber-50 border-amber-300 text-amber-700"
-                                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                                  }`}
+                                  className={`text-xs px-2 py-0.5 rounded border font-medium transition-colors ${compareList.some((x) => x.id === c.id) ? "bg-amber-50 border-amber-300 text-amber-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
                                 >
                                   {compareList.some((x) => x.id === c.id) ? "✓" : "+ Compare"}
                                 </button>
@@ -255,15 +208,10 @@ export default function CollegesPage() {
             </div>
           )}
 
-          <Pagination
-            page={filters.page || 1}
-            totalPages={totalPages}
-            onPageChange={(p) => setFilters((prev) => ({ ...prev, page: p }))}
-          />
+          <Pagination page={filters.page || 1} totalPages={totalPages} onPageChange={(p) => setFilters((prev) => ({ ...prev, page: p }))} />
         </div>
       </div>
 
-      {/* Compare drawer */}
       {compareList.length > 0 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm">
@@ -276,15 +224,20 @@ export default function CollegesPage() {
             ))}
           </div>
           {compareList.length >= 2 && (
-            <Link
-              href={`/compare?ids=${compareList.map((c) => c.id).join(",")}`}
-              className="bg-indigo-500 hover:bg-indigo-400 px-4 py-1.5 rounded-xl text-sm font-semibold transition-colors"
-            >
+            <Link href={`/compare?ids=${compareList.map((c) => c.id).join(",")}`} className="bg-indigo-500 hover:bg-indigo-400 px-4 py-1.5 rounded-xl text-sm font-semibold transition-colors">
               Compare Now
             </Link>
           )}
         </div>
       )}
     </div>
+  );
+}
+
+export default function CollegesPage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-8 text-slate-400">Loading...</div>}>
+      <CollegesContent />
+    </Suspense>
   );
 }
