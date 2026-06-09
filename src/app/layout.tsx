@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Header />
           <main className="min-h-[calc(100vh-64px)]">{children}</main>
           <footer className="border-t border-slate-200 bg-white mt-16 py-8 text-center text-sm text-slate-500">
-            <p>© 2025 CollegeCompass. Built with Next.js, Prisma & PostgreSQL.</p>
+            <p>© 2026 CollegeCompass. Built with Next.js, Prisma & PostgreSQL.</p>
           </footer>
         </Providers>
       </body>
