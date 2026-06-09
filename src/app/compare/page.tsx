@@ -165,7 +165,7 @@ export default function ComparePage() {
 
           {/* Comparison rows */}
           {compareRows.map((row, i) => {
-            const highlights = row.highlight?.() || row.values.map(() => "");
+            const highlights = row.highlight ? row.highlight(row.values) : row.values.map(() => "");
             return (
               <div
                 key={row.label}
